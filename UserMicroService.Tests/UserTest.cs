@@ -11,7 +11,7 @@ using UserMicroService.Util;
 namespace UserMicroService.Tests
 {
     public class UserTest
-    {
+    { /*
 
         public void ClearUsers()
         {
@@ -148,7 +148,8 @@ namespace UserMicroService.Tests
 
         }
 
-
+        */
     }
+    
 }
 

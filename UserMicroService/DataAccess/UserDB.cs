@@ -4,99 +4,73 @@ using System.Linq;
 using System.Web;
 using UserMicroService.Models;
 using UserMicroService.Util;
+using System.Data.SqlClient;
+using System.Data;
+using System.Diagnostics;
 
 namespace UserMicroService.DataAccess
 {
-   
+
     public static class UserDB
     {
-        //lista svih korisnika
-        public static List<User> listOfUsers = new List<User>();
-
-        //vraca sve korisnike                           
-        public static List<User> GetAllUsers()
+        public static User ReadDbRow(SqlDataReader reader) //iscitavanje iz baze
         {
-           return listOfUsers; 
+            User retVal = new User();     //mapiranje
+
+            retVal.Id = (int)reader["Id"];
+            retVal.Name = reader["Name"] as string;
+            retVal.Email = reader["Email"] as string;
+
+            return retVal;
         }
 
-        //vraca korisnika po Id
+        
         public static User GetUserById(int id)
-        { 
-            foreach (User u in listOfUsers)
+        {
+            try
             {
-                if (u.Id == id)
+                User userToReturn = new User();
+
+                using (SqlConnection connection = new SqlConnection(DBFunctions.ConnectionString)) //ulaz u bazu
                 {
-                    return u;
+                    SqlCommand command = connection.CreateCommand();
+                    command.CommandText = String.Format(@"
+                            
+                                SELECT *
+                                    FROM
+                                        [user].[User]
+                                    WHERE
+                                        [Id] = @Id
+                                                                           
+
+                                "); //@ unutar navodnika pisati karaktere unutar navodnika
+
+                    command.Parameters.Add("@Id", SqlDbType.Int);
+                    command.Parameters["@Id"].Value = id;
+
+                    connection.Open();
+                    using (SqlDataReader reader = command.ExecuteReader()) //upit nad bazom 
+                    {
+                        if (reader.Read())
+                            {
+                           
+                            userToReturn = ReadDbRow(reader);
+                        }
+
+                    } 
+
                 }
+                return userToReturn;
             }
 
-            Console.WriteLine("No user found!");
-            return null;
-        }
-
-        public static void RemoveUser(User testUser)
-        {
-            throw new NotImplementedException();
-        }
-
-
-        //vraca korisnike po imenu
-        public static List<User> GetUserByName(string name)
-        {
-            List<User> userByName = new List<User>();
-            foreach (User user in listOfUsers)
+            catch (Exception ex)
             {
-                if (user.Name.Equals(name))
-                {
-                    userByName.Add(user);
-                }
-                
+                Debug.WriteLine(ex);
+                throw ex;
+
             }
 
-            if (userByName.Count > 0)
-            {
-                return userByName;
-            }
-
-            Console.WriteLine("No user found!");
-            return null;
         }
 
-        //dodaje novog korisnika
-        public static User AddNewUser(User user) {
-            listOfUsers.Add(user);
-            return user;
-        }
-
-        //brisanje korisnika na osnovu id
-        public static void RemoveUser(int id){
-            User removeUser = GetUserById(id);
-            listOfUsers.Remove(removeUser);
-        }
-
-        public static User CreateNewUser(int id, string name, string email, string adresa, string zipCode, string cityName, string countryName, string phone)
-        {
-            User user = new User();
-            user.Id = id;
-            user.Name = name;
-            user.Email = email;
-            user.Adresa = adresa;
-            user.ZipCode = zipCode;
-            user.CityName = cityName;
-            user.CountryName = countryName;
-            user.Phone = phone;
-
-            return user;
-        }
-
-        //modifikovanje korisnika
-        public static User ModifyUser(int id, string name, string email, string adresa, string zipCode, string cityName, string countryName, string phone)
-        {
-            User user = CreateNewUser(id, name, email, adresa, zipCode, cityName, countryName, phone);
-            RemoveUser(id);
-            AddNewUser(user);
-
-            return user;
-    }
     }
 }
